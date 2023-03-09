@@ -1,0 +1,103 @@
+import menu_controller, element_controller, geometry_controller, utility_controller, attribute_controller
+
+
+menu_items = ['Test set lay-up', '', 'Return']
+
+selected_menu_item = menu_controller.display_simple_menu(menu_items)
+
+# disable check and query prompts
+utility_controller.push_check_and_query_data()
+utility_controller.change_check_and_query_data_to_no_queries()
+
+# get active elements
+active_elements = element_controller.get_active_identifiable_element_ids()
+
+if selected_menu_item == 'Test set lay-up':
+    panel_3_layers = {}
+    panel_5_layers = {}
+    panel_7_layers = {}
+    airstair_7_layers = {}
+    airstair_8_layers = {}
+    airstair_10_layers = {}
+    layup = ()
+    for panel in active_elements:
+        material_name = attribute_controller.get_element_material_name(panel)
+        print(material_name)
+        if material_name != "CLT":
+            pass
+        else:
+            element_name = attribute_controller.get_name(panel)
+            if element_name == "AirStair":
+                panel_height = geometry_controller.get_height(panel)
+                print(panel_height)
+                print(element_name)
+                if 269 < panel_height < 271:
+                    if panel_height not in airstair_7_layers.keys():
+                        airstair_7_layers[panel] = []
+                        airstair_7_layers[panel].append(panel)
+                else:
+                    if 299 < panel_height < 301:
+                        if panel_height not in airstair_7_layers.keys():
+                            airstair_7_layers[panel] = []
+                            airstair_7_layers[panel].append(panel)
+                    else:
+                        if 262 < panel_height < 264:
+                            if panel_height not in airstair_8_layers.keys():
+                                airstair_8_layers[panel] = []
+                                airstair_8_layers[panel].append(panel)
+                        else:
+                            if 292 < panel_height < 294:
+                                if panel_height not in airstair_8_layers.keys():
+                                    airstair_8_layers[panel] = []
+                                    airstair_8_layers[panel].append(panel)
+                            else:
+                                if 332 < panel_height < 334:
+                                    if panel_height not in airstair_10_layers.keys():
+                                        airstair_10_layers[panel] = []
+                                        airstair_10_layers[panel].append(panel)
+            else:
+                panel_height = geometry_controller.get_height(panel)
+                print(panel_height)
+                if 89 < panel_height < 131:
+                    if panel_height not in panel_3_layers.keys():
+                        panel_3_layers[panel] = []
+                        panel_3_layers[panel].append(panel)
+                else:
+                    if 139 < panel_height < 221:
+                        if panel_height not in panel_5_layers.keys():
+                            panel_5_layers[panel] = []
+                            panel_5_layers[panel].append(panel)
+                    else:
+                        if 239 < panel_height < 311:
+                            if panel_height not in panel_7_layers.keys():
+                                panel_7_layers[panel] = []
+                                panel_7_layers[panel].append(panel)
+
+    for p3 in panel_3_layers.keys():
+        layup = "CL3"
+        attribute_controller.set_user_attribute([p3], 2, layup)
+        print(1)
+    for p5 in panel_5_layers.keys():
+        layup = "CL5"
+        attribute_controller.set_user_attribute([p5], 2, layup)
+        print(2)
+    for p7 in panel_7_layers.keys():
+        layup = "CL7"
+        attribute_controller.set_user_attribute([p7], 2, layup)
+        print(3)
+    for as7 in airstair_7_layers.keys():
+        layup = "AS7"
+        attribute_controller.set_user_attribute([as7], 2, layup)
+        print(4)
+    for as8 in airstair_8_layers.keys():
+        layup = "AS8"
+        attribute_controller.set_user_attribute([as8], 2, layup)
+        print(5)
+    for as10 in airstair_10_layers.keys():
+        layup = "AS10"
+        attribute_controller.set_user_attribute([as10], 2, layup)
+        print(6)
+utility_controller.print_error('Lay-up set to activated panels')
+# restores check and query prompts
+
+utility_controller.pop_check_and_query_data()
