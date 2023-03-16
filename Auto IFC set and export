@@ -1,6 +1,4 @@
-import menu_controller, element_controller, geometry_controller, utility_controller, scene_controller, attribute_controller, math, datetime
-
-
+import menu_controller, element_controller, geometry_controller, utility_controller, scene_controller, attribute_controller, math, datetim
 
 menu_items = ['IFC export', '', 'Return']
 
@@ -37,3 +35,5 @@ if selected_menu_item == 'IFC export':
     scene_controller.add_scene(scene_name)
     scene_controller.add_elements_to_scene(to_add_to_scene, [scene_name])
     utility_controller.print_error('Test')
+    
+utility_controller.pop_check_and_query_data()    
