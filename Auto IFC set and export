@@ -1,0 +1,39 @@
+import menu_controller, element_controller, geometry_controller, utility_controller, scene_controller, attribute_controller, math, datetime
+
+
+
+menu_items = ['IFC export', '', 'Return']
+
+selected_menu_item = menu_controller.display_simple_menu(menu_items)
+
+# disable check and query prompts
+utility_controller.push_check_and_query_data()
+utility_controller.change_check_and_query_data_to_no_queries()
+
+# get active elements
+active_elements = element_controller.get_active_identifiable_element_ids()
+
+if selected_menu_item == 'IFC export':
+    ifc_scene = "IFC"
+    today = datetime.date.today()
+    day = today.strftime("%x")
+    scene_name = ifc_scene + "-" + day
+    to_add_to_scene = {}
+    panel_name = ()
+    i = 0
+    indent = 1
+    for panel in active_elements:
+        panel_name = attribute_controller.get_name(panel)
+        print(panel_name)
+        if panel_name not in to_add_to_scene.keys():
+            i = i + indent
+            panel_name = []
+            panel_name.append(panel)
+        to_add_to_scene[i] = []
+        to_add_to_scene[i].append(panel_name)
+
+    print(to_add_to_scene)
+
+    scene_controller.add_scene(scene_name)
+    scene_controller.add_elements_to_scene(to_add_to_scene, [scene_name])
+    utility_controller.print_error('Test')
