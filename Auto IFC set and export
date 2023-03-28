@@ -12,28 +12,94 @@ utility_controller.change_check_and_query_data_to_no_queries()
 active_elements = element_controller.get_active_identifiable_element_ids()
 
 if selected_menu_item == 'IFC export':
-    ifc_scene = "IFC"
+
+    element_type_2x3_not_set = []
+    building_and_storey_not_set = []
+    correct_storey = "Storey 1"
+    correct_building = "Building 1"
     today = datetime.date.today()
     day = today.strftime("%x")
-    scene_name = ifc_scene + "-" + day
-    to_add_to_scene = {}
-    panel_name = ()
-    i = 0
-    indent = 1
-    for panel in active_elements:
-        panel_name = attribute_controller.get_name(panel)
-        print(panel_name)
-        if panel_name not in to_add_to_scene.keys():
-            i = i + indent
-            panel_name = []
-            panel_name.append(panel)
-        to_add_to_scene[i] = []
-        to_add_to_scene[i].append(panel_name)
+    ifc_extension = ".ifc"
+    project_name = utility_controller.get_3d_file_name()
+    project_name_good_to_use = project_name.replace(".3d", "")
+    ifc_name = f"{project_name_good_to_use} - {ifc_extension}"
+    scene_name = f"IFC - {today.strftime('%Y-%m-%d')}"
+    parts_to_export = []
+    not_exported = []
 
-    print(to_add_to_scene)
+    for stuff in active_elements:
 
+        if attribute_controller.get_element_material_name(stuff) == "CLT":
+            parts_to_export.append(stuff)
+        else:
+            material_name = attribute_controller.get_element_material_name(stuff)
+            if "BEAM" in material_name:
+                parts_to_export.append(stuff)
+            else:
+                if attribute_controller.get_name(stuff) == "Grid":
+                    parts_to_export.append(stuff)
+                else:
+                    if attribute_controller.get_name(stuff) == "GRID":
+                        parts_to_export.append(stuff)
+                    else:
+                        if attribute_controller.get_name(stuff) == "DirectionArrow":
+                            parts_to_export.append(stuff)
+                        else:
+                            if attribute_controller.is_drilling(stuff):
+                                parts_to_export.append(stuff)
+                            else:
+                                if attribute_controller.is_connector_axis(stuff):
+                                    parts_to_export.append(stuff)
+                                else:
+                                    if visualization_controller.get_color(stuff) == 5:
+                                        parts_to_export.append(stuff)
+                                    else:
+                                        if attribute_controller.get_element_material_name(stuff) == "LGL":
+                                            parts_to_export.append(stuff)
+                                        else:
+                                            if attribute_controller.get_user_attribute(stuff, 15) == "Yes":
+                                                parts_to_export.append(stuff)
+                                            else:
+                                                not_exported.append(stuff)
+
+    visualization_controller.set_inactive(not_exported)
+    scene_controller.delete_scene(scene_name)
     scene_controller.add_scene(scene_name)
-    scene_controller.add_elements_to_scene(to_add_to_scene, [scene_name])
-    utility_controller.print_error('Test')
-    
-utility_controller.pop_check_and_query_data()    
+    scene_controller.add_elements_to_scene(scene_name, parts_to_export)
+
+    for panel in parts_to_export:
+        if bim_controller.get_building(panel) == "Building 1":
+            pass
+        else:
+            building_and_storey_not_set.append(panel)
+
+    for panel in parts_to_export:
+        if bim_controller.get_storey(panel) == "Storey 1":
+            pass
+        else:
+            if panel not in building_and_storey_not_set:
+                building_and_storey_not_set.append(panel)
+
+    for parts in building_and_storey_not_set:
+        parts_to_be_set = []
+        parts_to_be_set.append(parts)
+        bim_controller.set_building_and_storey(parts_to_be_set, correct_building, correct_storey)
+
+    for panel in parts_to_export:
+        ifc_type = bim_controller.get_ifc2x3_element_type(panel)
+        if cadwork.ifc_2x3_element_type.is_ifc_building_element_proxy(ifc_type):
+            pass
+        else:
+            if panel not in element_type_2x3_not_set:
+                element_type_2x3_not_set.append(panel)
+
+    for parts in element_type_2x3_not_set:
+        parts_to_be_set_again = []
+        parts_to_be_set_again.append(parts)
+        ifc_type = bim_controller.get_ifc2x3_element_type(parts)
+        ifc_type.set_ifc_building_element_proxy()
+        bim_controller.set_ifc2x3_element_type([parts], ifc_type)
+
+    bim_controller.export_ifc(parts_to_export, ifc_name)
+
+    utility_controller.print_error('IFC exported in folder - Scene created')
