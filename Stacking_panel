@@ -1,0 +1,104 @@
+import menu_controller
+import cadwork
+import element_controller
+import material_controller
+import visualization_controller
+import geometry_controller
+import utility_controller
+import bim_controller
+import scene_controller
+import attribute_controller
+import math
+import datetime
+
+heavy_panel = []
+
+light_panel = []
+
+user_value = ""
+
+menu_items = ['Element heavier than:', 'Element lighter than:', 'Shift prod number', 'COPY ATTRIBUTES 8 & 9', 'Auto set lay-up', 'IFC export', 'Stacking for loading',  '', 'Return']
+
+selected_menu_item = menu_controller.display_simple_menu(menu_items)
+
+# get active elements
+active_elements = element_controller.get_active_identifiable_element_ids()
+if selected_menu_item == 'Stacking for loading':
+
+    panel_prod_numbers = ()
+    all_panel_prod_number = ()
+    sorted_prod_number = []
+    panel_prod_ids = {}
+    point_3d = cadwork.point_3d()
+    i = 0
+    basic_indent = 1
+    offset_current = 0
+    offset_previous = 0
+    half_current = ()
+    half_previous = ()
+    cumulative_height = 0
+    offset_between_panel = 25
+    panel = ""
+    copied_parts = []
+    o_a_truck_length = 13500
+
+    for panel in active_elements:
+        panel_prod_numbers = attribute_controller.get_production_number(panel)
+        if panel_prod_numbers not in panel_prod_ids.keys():
+            panel_prod_ids[panel_prod_numbers] = []
+        panel_prod_ids[panel_prod_numbers].append(panel)
+
+    sorted_prod_ids_by_value = dict(sorted(panel_prod_ids.items(), key=lambda item: item[1]))
+
+    sorted_keys = sorted(panel_prod_ids.keys())
+    sorted_prod_ids_by_key = {key: panel_prod_ids[key] for key in sorted_keys}
+
+    reversed_sorted_key = reversed(sorted(panel_prod_ids.keys()))
+    reversed_sorted_prod_ids_by_key = {key: panel_prod_ids[key] for key in reversed_sorted_key}
+
+    listed_in_reversed_order_key = list(reversed_sorted_prod_ids_by_key.keys())
+
+    listed_in_reversed_order_value = list(reversed_sorted_prod_ids_by_key.values())
+
+    values_iter = [listed_in_reversed_order_key[i]]
+
+    for values_iter in listed_in_reversed_order_key:
+
+        for stuff in active_elements:
+            prod_num_for_now = attribute_controller.get_production_number(stuff)
+
+            if values_iter != prod_num_for_now:
+                pass
+            else:
+                panel = [stuff]
+                my_coord_ref = geometry_controller.get_p1(stuff)
+                o_a_length_of_panel = geometry_controller.get_length(stuff)
+                o_a_width_of_panel = geometry_controller.get_width(stuff)
+                if o_a_length_of_panel > o_a_width_of_panel:
+                    old_xl = geometry_controller.get_xl(stuff)
+                    old_yl = geometry_controller.get_yl(stuff)
+                    offset_current = geometry_controller.get_height(stuff)
+                    offset_current = round(offset_current)
+                    offset_current = (offset_current / 2)
+                    new_point = cadwork.point_3d(0, ((o_a_truck_length - o_a_length_of_panel) / 2), cumulative_height + offset_current)
+                    new_xl = cadwork.point_3d(0, 1, 0)
+                    new_yl = cadwork.point_3d(1, 0, 0)
+                    element_controller.apply_transformation_coordinate(panel, my_coord_ref, old_xl, old_yl, new_point, new_xl, new_yl)
+                    offset_previous = (cumulative_height + offset_current)
+                    cumulative_height = offset_previous + offset_current + offset_between_panel
+                else:
+                    old_xl = geometry_controller.get_xl(stuff)
+                    old_yl = geometry_controller.get_yl(stuff)
+                    offset_current = geometry_controller.get_height(stuff)
+                    offset_current = round(offset_current)
+                    offset_current = (offset_current / 2)
+                    new_point = cadwork.point_3d((-o_a_length_of_panel / 2), (((o_a_truck_length - o_a_width_of_panel) / 2) + o_a_width_of_panel / 2), cumulative_height + offset_current)
+                    new_xl = cadwork.point_3d(1, 0, 0)
+                    new_yl = cadwork.point_3d(0, 1, 0)
+                    element_controller.apply_transformation_coordinate(panel, my_coord_ref, old_xl, old_yl, new_point, new_xl, new_yl)
+                    offset_previous = (cumulative_height + offset_current)
+                    cumulative_height = offset_previous + offset_current + offset_between_panel
+
+            i = i + basic_indent
+
+    utility_controller.print_error('Panels Stacked')
