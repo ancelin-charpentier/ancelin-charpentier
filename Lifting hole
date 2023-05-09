@@ -1,0 +1,196 @@
+import menu_controller
+import cadwork
+import element_controller
+import material_controller
+import visualization_controller
+import geometry_controller
+import utility_controller
+import bim_controller
+import scene_controller
+import attribute_controller
+import math
+import datetime
+from turtle import *
+
+heavy_panel = []
+
+light_panel = []
+
+view_save = []
+
+user_value = ""
+
+menu_items = ['Element heavier than:', 'Element lighter than:', 'Shift prod number', 'COPY ATTRIBUTES 8 & 9',
+              'Set lay-up', 'Lay-up with dict',  'Training 1', 'IFC export', 'Panel stacking', 'Lifting hole for long AirStairs',
+              'Lifting hole for transv AirStairs', 'Command test',
+              '', 'Return']
+
+selected_menu_item = menu_controller.display_simple_menu(menu_items)
+
+# get active elements
+active_elements = element_controller.get_active_identifiable_element_ids()
+
+if selected_menu_item == 'Lifting hole for long AirStairs':
+    light_panel = []
+    heavy_panel = []
+    separate_value = 200
+    drilling_diameter = 40
+    drilling_name = "Horizontal Lifting Holes"
+
+    pi = math.pi
+
+    for element in active_elements:
+        panel_weight = geometry_controller.get_weight(element)
+        if panel_weight > 400:
+            heavy_panel.append(element)
+        else:
+            light_panel.append(element)
+
+    for light_stuff in light_panel:
+        centre_of_gravity = geometry_controller.get_center_of_gravity(light_stuff)
+        panel_height = geometry_controller.get_height(light_stuff)
+        panel_height = panel_height * 10
+        panel_height = round(panel_height)
+        panel_height = panel_height / 10
+        coord1 = geometry_controller.get_p1(light_stuff)
+        coord2 = geometry_controller.get_p2(light_stuff)
+        coord3 = geometry_controller.get_p3(light_stuff)
+        def_zl = cadwork.point_3d(coord3.x, coord3.y, coord3.z)
+        panel_width = geometry_controller.get_width(light_stuff)
+        referenced_beam = element_controller.create_rectangular_beam_points(100, 200, coord1, coord2, def_zl)
+        tgt1 = cadwork.point_3d((centre_of_gravity.x - coord3.x), (centre_of_gravity.y - coord3.y), (centre_of_gravity.z - coord3.z))
+        shrinked_beam = [referenced_beam]
+        element_controller.stretch_start_facet(shrinked_beam, tgt1)
+        shrked_beam_p1 = geometry_controller.get_p1(referenced_beam)
+        shrked_beam_p3 = geometry_controller.get_p3(referenced_beam)
+        new_point_rotate_to_2 = cadwork.point_3d((shrked_beam_p1.x - shrked_beam_p3.x), (shrked_beam_p1.y - shrked_beam_p3.y), (shrked_beam_p1.z - shrked_beam_p3.z))
+        rotated_beam = shrinked_beam
+        element_controller.rotate_elements(rotated_beam, shrked_beam_p1, new_point_rotate_to_2, pi / 2)
+        shrinked_beam = [referenced_beam]
+        element_controller.stretch_start_facet(shrinked_beam, tgt1)
+        beam_length_0 = geometry_controller.get_length(referenced_beam)
+        x_crs = panel_width / 2
+        beam_length_step_1 = beam_length_0 + x_crs
+        geometry_controller.set_length_real(rotated_beam, beam_length_step_1)
+        roted_p1 = geometry_controller.get_p1(referenced_beam)
+        roted_p2 = geometry_controller.get_p2(referenced_beam)
+        roted_p3 = geometry_controller.get_p3(referenced_beam)
+        new_point_p1 = cadwork.point_3d((((roted_p1.x - roted_p3.x) * (panel_height / 2)) + roted_p1.x),
+                                        (((roted_p1.y - roted_p3.y) * (panel_height / 2)) + roted_p1.y),
+                                        (((roted_p1.z - roted_p3.z) * (panel_height / 2)) + roted_p1.z))
+        ref_pnt1 = cadwork.point_3d(1, 0, 0)
+        ref_pnt2 = cadwork.point_3d(0, 1, 0)
+        ref_pnt1_bis = cadwork.point_3d(1, 0, 0)
+        ref_pnt2_bis = cadwork.point_3d(0, 1, 0)
+        element_controller.apply_transformation_coordinate(rotated_beam, roted_p1, ref_pnt1, ref_pnt2, new_point_p1, ref_pnt1_bis, ref_pnt2_bis)
+        drill_pts = referenced_beam
+        moved_beam_set_p1 = geometry_controller.get_p1(drill_pts)
+        moved_beam_set_p3 = geometry_controller.get_p3(drill_pts)
+        second_point_for_drilling = cadwork.point_3d(((moved_beam_set_p3.x - moved_beam_set_p1.x) * panel_height + moved_beam_set_p1.x),
+                                                     ((moved_beam_set_p3.y - moved_beam_set_p1.y) * panel_height + moved_beam_set_p1.y),
+                                                     ((moved_beam_set_p3.z - moved_beam_set_p1.z) * panel_height + moved_beam_set_p1.z))
+        ref_drilling = element_controller.create_drilling_points(drilling_diameter, moved_beam_set_p1, second_point_for_drilling)
+        named_drilling = [ref_drilling]
+        attribute_controller.set_name(named_drilling, drilling_name)
+        ref_drill_p1 = geometry_controller.get_p1(ref_drilling)
+        geometry_controller.set_length_real(rotated_beam, x_crs)
+        length_set_beam = rotated_beam
+        x_crs_p1 = geometry_controller.get_p1(referenced_beam)
+        x_crs_p2 = geometry_controller.get_p2(referenced_beam)
+        shift_x_ref_1 = (x_crs_p1.x - x_crs_p2.x)
+        shift_y_ref_1 = (x_crs_p1.y - x_crs_p2.y)
+        shift_z_ref_1 = (x_crs_p1.z - x_crs_p2.z)
+        spot_1 = cadwork.point_3d(0 - shift_x_ref_1,
+                                  0 - shift_y_ref_1,
+                                  0 - shift_z_ref_1)
+        copy_drill = [ref_drilling]
+        element_controller.copy_elements(copy_drill, spot_1)
+        beam_to_delete = [referenced_beam]
+        deleted_beam = element_controller.delete_elements(beam_to_delete)
+        visualization_controller.refresh()
+
+    for heavy_stuff in heavy_panel:
+        separate_value = 200
+        centre_of_gravity = geometry_controller.get_center_of_gravity(heavy_stuff)
+        panel_height = geometry_controller.get_height(heavy_stuff)
+        panel_height = panel_height * 10
+        panel_height = round(panel_height)
+        panel_height = panel_height / 10
+        coord1 = geometry_controller.get_p1(heavy_stuff)
+        coord2 = geometry_controller.get_p2(heavy_stuff)
+        coord3 = geometry_controller.get_p3(heavy_stuff)
+        def_zl = cadwork.point_3d(coord3.x, coord3.y, coord3.z)
+        panel_width = geometry_controller.get_width(heavy_stuff)
+        referenced_beam = element_controller.create_rectangular_beam_points(100, 200, coord1, coord2, def_zl)
+        tgt1 = cadwork.point_3d((centre_of_gravity.x - coord3.x), (centre_of_gravity.y - coord3.y), (centre_of_gravity.z - coord3.z))
+        shrinked_beam = [referenced_beam]
+        element_controller.stretch_start_facet(shrinked_beam, tgt1)
+        shrked_beam_p1 = geometry_controller.get_p1(referenced_beam)
+        shrked_beam_p3 = geometry_controller.get_p3(referenced_beam)
+        new_point_rotate_to_2 = cadwork.point_3d((shrked_beam_p1.x - shrked_beam_p3.x), (shrked_beam_p1.y - shrked_beam_p3.y), (shrked_beam_p1.z - shrked_beam_p3.z))
+        rotated_beam = shrinked_beam
+        element_controller.rotate_elements(rotated_beam, shrked_beam_p1, new_point_rotate_to_2, pi / 2)
+        shrinked_beam = [referenced_beam]
+        element_controller.stretch_start_facet(shrinked_beam, tgt1)
+        beam_length_0 = geometry_controller.get_length(referenced_beam)
+        x_crs = panel_width / 2
+        beam_length_step_1 = beam_length_0 + x_crs
+        geometry_controller.set_length_real(rotated_beam, beam_length_step_1)
+        roted_p1 = geometry_controller.get_p1(referenced_beam)
+        roted_p2 = geometry_controller.get_p2(referenced_beam)
+        roted_p3 = geometry_controller.get_p3(referenced_beam)
+        new_point_p1 = cadwork.point_3d((((roted_p1.x - roted_p3.x) * (panel_height / 2)) + roted_p1.x),
+                                        (((roted_p1.y - roted_p3.y) * (panel_height / 2)) + roted_p1.y),
+                                        (((roted_p1.z - roted_p3.z) * (panel_height / 2)) + roted_p1.z))
+        ref_pnt1 = cadwork.point_3d(1, 0, 0)
+        ref_pnt2 = cadwork.point_3d(0, 1, 0)
+        ref_pnt1_bis = cadwork.point_3d(1, 0, 0)
+        ref_pnt2_bis = cadwork.point_3d(0, 1, 0)
+        element_controller.apply_transformation_coordinate(rotated_beam, roted_p1, ref_pnt1, ref_pnt2, new_point_p1, ref_pnt1_bis, ref_pnt2_bis)
+        drill_pts = referenced_beam
+        moved_beam_set_p1 = geometry_controller.get_p1(drill_pts)
+        moved_beam_set_p3 = geometry_controller.get_p3(drill_pts)
+        second_point_for_drilling = cadwork.point_3d(((moved_beam_set_p3.x - moved_beam_set_p1.x) * panel_height + moved_beam_set_p1.x),
+                                                     ((moved_beam_set_p3.y - moved_beam_set_p1.y) * panel_height + moved_beam_set_p1.y),
+                                                     ((moved_beam_set_p3.z - moved_beam_set_p1.z) * panel_height + moved_beam_set_p1.z))
+        ref_drilling = element_controller.create_drilling_points(drilling_diameter, moved_beam_set_p1, second_point_for_drilling)
+        named_drilling = [ref_drilling]
+        # created_drilling.append(named_drilling)
+        attribute_controller.set_name(named_drilling, drilling_name)
+        ref_drill_p1 = geometry_controller.get_p1(ref_drilling)
+        geometry_controller.set_length_real(rotated_beam, x_crs)
+        length_set_beam = rotated_beam
+        x_crs_p1 = geometry_controller.get_p1(referenced_beam)
+        x_crs_p2 = geometry_controller.get_p2(referenced_beam)
+        shift_x_ref_1 = (x_crs_p1.x - x_crs_p2.x)
+        shift_y_ref_1 = (x_crs_p1.y - x_crs_p2.y)
+        shift_z_ref_1 = (x_crs_p1.z - x_crs_p2.z)
+        spot_1 = cadwork.point_3d(0 - shift_x_ref_1,
+                                  0 - shift_y_ref_1,
+                                  0 - shift_z_ref_1)
+        copy_drill = [ref_drilling]
+        copied_drilling = element_controller.copy_elements(copy_drill, spot_1)
+        geometry_controller.set_length_real(shrinked_beam, separate_value / 2)
+
+        x_separ_p1 = geometry_controller.get_p1(drill_pts)
+        x_separ_p2 = geometry_controller.get_p2(drill_pts)
+        separ_x_ref_1 = (x_separ_p1.x - x_separ_p2.x)
+        separ_y_ref_1 = (x_separ_p1.y - x_separ_p2.y)
+        separ_z_ref_1 = (x_separ_p1.z - x_separ_p2.z)
+        spot_2 = cadwork.point_3d(0 - separ_x_ref_1,
+                                  0 - separ_y_ref_1,
+                                  0 - separ_z_ref_1)
+        element_controller.move_element(named_drilling, spot_2)
+        element_controller.move_element(copied_drilling, spot_2)
+
+        spot_3 = cadwork.point_3d(2 * separ_x_ref_1,
+                                  2 * separ_y_ref_1,
+                                  2 * separ_z_ref_1)
+        element_controller.copy_elements(named_drilling, spot_3)
+        element_controller.copy_elements(copied_drilling, spot_3)
+
+        beam_to_delete = [referenced_beam]
+        deleted_beam = element_controller.delete_elements(beam_to_delete)
+        visualization_controller.refresh()
+
+utility_controller.print_error('1111')
