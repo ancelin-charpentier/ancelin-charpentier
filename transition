@@ -1,0 +1,22 @@
+import pdfplumber
+
+# Chemin vers le fichier PDF
+pdf_path = "path/to/your/pdf-file.pdf"
+
+# Ouvre le fichier PDF
+with pdfplumber.open(pdf_path) as pdf:
+    # Parcourir chaque page du PDF
+    for page_num, page in enumerate(pdf.pages):
+        # Affiche la taille de la page (format)
+        page_width = page.width
+        page_height = page.height
+        print(f"Page {page_num + 1} - Format: {page_width} x {page_height}")
+        
+        # Extraire le texte et les coordonnées de chaque élément
+        extracted_text = page.extract_words()  # Extract text with coordinates
+        
+        # Affiche le texte et ses coordonnées (bounding box)
+        for word in extracted_text:
+            text = word['text']
+            x0, y0, x1, y1 = word['x0'], word['top'], word['x1'], word['bottom']
+            print(f"Text: '{text}' | Coordinates: (x0: {x0}, y0: {y0}, x1: {x1}, y1: {y1})")
