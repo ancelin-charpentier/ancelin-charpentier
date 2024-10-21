@@ -68,3 +68,31 @@ with pdfplumber.open(pdf_path) as pdf:
         phrase_recherchee = "Votre phrase à rechercher"
         if phrase_recherchee in texte_dans_region:
             print(f"Phrase trouvée à la page {page_num + 1} dans la région définie.")
+
+import pdfplumber
+
+# Chemin vers le fichier PDF
+pdf_path = "path/to/your/pdf-file.pdf"
+
+# Dimensions des formats A3 et A1 en points
+A3_DIMENSIONS = (841.89, 1190.55)
+A1_DIMENSIONS = (1683.78, 2383.94)
+
+# Fonction pour comparer les tailles de page
+def check_page_format(width, height):
+    if (round(width, 2), round(height, 2)) == A3_DIMENSIONS:
+        return "A3"
+    elif (round(width, 2), round(height, 2)) == A1_DIMENSIONS:
+        return "A1"
+    else:
+        return "Unknown format"
+
+# Ouvre le fichier PDF
+with pdfplumber.open(pdf_path) as pdf:
+    for page_num, page in enumerate(pdf.pages):
+        # Récupère la taille de la page
+        page_width = page.width
+        page_height = page.height
+        page_format = check_page_format(page_width, page_height)
+        
+        print(f"Page {page_num + 1} - Format: {page_format} (Size: {page_width} x {page_height} points)")
