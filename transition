@@ -45,3 +45,26 @@ if chemin_fichier:
     print(f"Fichier sélectionné : {chemin_fichier}")
 else:
     print("Aucun fichier sélectionné.")
+
+import pdfplumber
+
+# Chemin vers le fichier PDF
+pdf_path = "path/to/your/pdf-file.pdf"
+
+# Définir la région (bounding box) où tu veux rechercher du texte
+# Les coordonnées sont en points (1 point = 1/72 inch)
+x0, y0, x1, y1 = 100, 100, 400, 500  # Coordonnées de la région (à ajuster selon le PDF)
+
+# Ouvre le fichier PDF
+with pdfplumber.open(pdf_path) as pdf:
+    for page_num, page in enumerate(pdf.pages):
+        # Extraire le texte dans la région définie par la bounding box
+        texte_dans_region = page.within_bbox((x0, y0, x1, y1)).extract_text()
+        
+        print(f"Page {page_num + 1} - Texte dans la région (x0: {x0}, y0: {y0}, x1: {x1}, y1: {y1}):")
+        print(texte_dans_region)
+        
+        # Recherche d'une phrase ou d'un ensemble de mots spécifique dans cette région
+        phrase_recherchee = "Votre phrase à rechercher"
+        if phrase_recherchee in texte_dans_region:
+            print(f"Phrase trouvée à la page {page_num + 1} dans la région définie.")
