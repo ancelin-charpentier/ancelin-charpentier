@@ -20,3 +20,28 @@ with pdfplumber.open(pdf_path) as pdf:
             text = word['text']
             x0, y0, x1, y1 = word['x0'], word['top'], word['x1'], word['bottom']
             print(f"Text: '{text}' | Coordinates: (x0: {x0}, y0: {y0}, x1: {x1}, y1: {y1})")
+
+import tkinter as tk
+from tkinter import filedialog
+
+def demander_fichier():
+    # Crée une fenêtre Tkinter
+    root = tk.Tk()
+    root.withdraw()  # Cache la fenêtre principale
+    
+    # Ouvre une boîte de dialogue pour sélectionner un fichier
+    fichier_selectionne = filedialog.askopenfilename(
+        title="Sélectionner un fichier",
+        filetypes=(("Fichiers PDF", "*.pdf"), ("Tous les fichiers", "*.*"))
+    )
+    
+    return fichier_selectionne
+
+# Appelle la fonction pour demander à l'utilisateur de sélectionner un fichier
+chemin_fichier = demander_fichier()
+
+# Affiche le chemin du fichier sélectionné
+if chemin_fichier:
+    print(f"Fichier sélectionné : {chemin_fichier}")
+else:
+    print("Aucun fichier sélectionné.")
