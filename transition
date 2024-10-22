@@ -111,3 +111,51 @@ Sub LancerScriptPythonSimple()
     Shell pythonExec & " " & scriptPath, vbNormalFocus
 
 End Sub
+Sub ImportJSONtoExcel()
+    Dim jsonFile As String
+    Dim jsonData As Object
+    Dim dict As Object
+    Dim key As Variant
+    Dim ws As Worksheet
+    Dim i As Long, j As Long
+
+    ' Define the worksheet
+    Set ws = ThisWorkbook.Sheets("Sheet1")
+
+    ' Path to your JSON file
+    jsonFile = "C:\path\to\yourfile.json"
+
+    ' Read the JSON file content
+    jsonFile = ReadTextFile(jsonFile)
+
+    ' Parse the JSON
+    Set jsonData = JsonConverter.ParseJson(jsonFile)
+
+    ' Iterate through the keys of the JSON (assuming it's a dictionary)
+    i = 1 ' Start at row 1
+    For Each key In jsonData.Keys
+        ' Write the key in column A
+        ws.Cells(i, 1).Value = key
+        
+        ' Iterate through values (assuming they're arrays/lists)
+        j = 2 ' Start at column 2
+        For Each item In jsonData(key)
+            ws.Cells(i, j).Value = item
+            j = j + 1
+        Next item
+        
+        ' Move to the next row
+        i = i + 1
+    Next key
+
+End Sub
+
+Function ReadTextFile(filePath As String) As String
+    Dim fileNumber As Integer
+    Dim fileContent As String
+    fileNumber = FreeFile
+    Open filePath For Input As fileNumber
+    fileContent = Input$(LOF(fileNumber), fileNumber)
+    Close fileNumber
+    ReadTextFile = fileContent
+End Function
