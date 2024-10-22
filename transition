@@ -159,3 +159,8 @@ Function ReadTextFile(filePath As String) As String
     Close fileNumber
     ReadTextFile = fileContent
 End Function
+Sub TestFileAccess()
+    Dim jsonFile As String
+    jsonFile = "C:\path\to\yourfile.json"
+    MsgBox Dir(jsonFile) ' Check if file exists
+End Sub
