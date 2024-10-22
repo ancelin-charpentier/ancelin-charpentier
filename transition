@@ -96,3 +96,18 @@ with pdfplumber.open(pdf_path) as pdf:
         page_format = check_page_format(page_width, page_height)
         
         print(f"Page {page_num + 1} - Format: {page_format} (Size: {page_width} x {page_height} points)")
+
+Sub LancerScriptPythonSimple()
+
+    ' Le chemin de l'exécutable Python
+    Dim pythonExec As String
+    pythonExec = "python" ' Assumes Python is in the PATH, otherwise give full path
+    
+    ' Le chemin vers ton script Python
+    Dim scriptPath As String
+    scriptPath = "C:\chemin\vers\mon_script.py"
+    
+    ' Lancer le script Python avec Shell
+    Shell pythonExec & " " & scriptPath, vbNormalFocus
+
+End Sub
