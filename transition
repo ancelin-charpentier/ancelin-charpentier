@@ -164,3 +164,34 @@ Sub TestFileAccess()
     jsonFile = "C:\path\to\yourfile.json"
     MsgBox Dir(jsonFile) ' Check if file exists
 End Sub
+Sub OpenJSONFileWithoutPrompt()
+    Dim filePath As String
+    Dim fileName As String
+    Dim fullPath As String
+    Dim fileNumber As Integer
+    Dim jsonData As String
+
+    ' Set the name of the JSON file
+    fileName = "temp.json"
+    
+    ' Construct the full path to the JSON file
+    fullPath = ThisWorkbook.Path & "\" & fileName
+    
+    ' Check if the file exists
+    If Dir(fullPath) <> "" Then
+        ' Open the JSON file for reading
+        fileNumber = FreeFile
+        Open fullPath For Input As #fileNumber
+        
+        ' Read the contents of the JSON file
+        jsonData = Input$(LOF(fileNumber), fileNumber)
+        
+        ' Close the file
+        Close #fileNumber
+        
+        ' Display the contents in a message box (optional)
+        MsgBox "Contents of " & fileName & ":" & vbCrLf & jsonData
+    Else
+        MsgBox "The file " & fileName & " does not exist in the same folder as this workbook."
+    End If
+End Sub
