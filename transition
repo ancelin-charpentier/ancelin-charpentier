@@ -1,197 +1,62 @@
-import pdfplumber
+from collections import Counter
+from itertools import combinations
 
-# Chemin vers le fichier PDF
-pdf_path = "path/to/your/pdf-file.pdf"
+def optimize_cutting_with_groups(lengths_to_cut, max_bar_length):
+    # Step 1: Find repetitive patterns
+    def find_patterns(lengths, max_length):
+        # Store all patterns that fit well into a bar
+        patterns = Counter()
+        for r in range(1, len(lengths) + 1):
+            for combination in combinations(lengths, r):
+                if sum(combination) <= max_length:
+                    patterns[tuple(sorted(combination))] += 1
+        return patterns
 
-# Ouvre le fichier PDF
-with pdfplumber.open(pdf_path) as pdf:
-    # Parcourir chaque page du PDF
-    for page_num, page in enumerate(pdf.pages):
-        # Affiche la taille de la page (format)
-        page_width = page.width
-        page_height = page.height
-        print(f"Page {page_num + 1} - Format: {page_width} x {page_height}")
-        
-        # Extraire le texte et les coordonnées de chaque élément
-        extracted_text = page.extract_words()  # Extract text with coordinates
-        
-        # Affiche le texte et ses coordonnées (bounding box)
-        for word in extracted_text:
-            text = word['text']
-            x0, y0, x1, y1 = word['x0'], word['top'], word['x1'], word['bottom']
-            print(f"Text: '{text}' | Coordinates: (x0: {x0}, y0: {y0}, x1: {x1}, y1: {y1})")
+    # Step 2: Prioritize the most frequent patterns
+    lengths_to_cut = sorted(lengths_to_cut, reverse=True)
+    patterns = find_patterns(lengths_to_cut, max_bar_length)
+    sorted_patterns = sorted(patterns.items(), key=lambda x: (-x[1], -sum(x[0])))
 
-import tkinter as tk
-from tkinter import filedialog
+    # Step 3: Build bars using the patterns
+    bars = []
+    remaining = Counter(lengths_to_cut)
 
-def demander_fichier():
-    # Crée une fenêtre Tkinter
-    root = tk.Tk()
-    root.withdraw()  # Cache la fenêtre principale
-    
-    # Ouvre une boîte de dialogue pour sélectionner un fichier
-    fichier_selectionne = filedialog.askopenfilename(
-        title="Sélectionner un fichier",
-        filetypes=(("Fichiers PDF", "*.pdf"), ("Tous les fichiers", "*.*"))
-    )
-    
-    return fichier_selectionne
+    for pattern, _ in sorted_patterns:
+        while all(remaining[l] >= pattern.count(l) for l in pattern):
+            bars.append(list(pattern))
+            for l in pattern:
+                remaining[l] -= pattern.count(l)
 
-# Appelle la fonction pour demander à l'utilisateur de sélectionner un fichier
-chemin_fichier = demander_fichier()
+    # Step 4: Handle remaining lengths
+    remaining_lengths = []
+    for length, count in remaining.items():
+        remaining_lengths.extend([length] * count)
+    leftover_bars = optimize_cutting(remaining_lengths, max_bar_length)
+    bars.extend(leftover_bars)
 
-# Affiche le chemin du fichier sélectionné
-if chemin_fichier:
-    print(f"Fichier sélectionné : {chemin_fichier}")
-else:
-    print("Aucun fichier sélectionné.")
+    return bars
 
-import pdfplumber
+# Greedy algorithm to handle leftovers
+def optimize_cutting(lengths_to_cut, max_bar_length):
+    bars = []
+    lengths_to_cut = sorted(lengths_to_cut, reverse=True)
+    for length in lengths_to_cut:
+        placed = False
+        for bar in bars:
+            if sum(bar) + length <= max_bar_length:
+                bar.append(length)
+                placed = True
+                break
+        if not placed:
+            bars.append([length])
+    return bars
 
-# Chemin vers le fichier PDF
-pdf_path = "path/to/your/pdf-file.pdf"
+# Example usage
+# lengths_to_cut = [4823, 7931, 2048, 5619, 3287, 9146, 7302, 4561, 9146, 5619, 8720, 4823, 5619, 7931, 3159, 3287, 9146, 7302, 2048, 4561, 2048, 3287, 8720, 7931, 3159, 4823, 7931, 8720, 7302, 7302, 2048]
+lengths_to_cut = [4823, 7931, 2048, 5619, 3287, 9146, 7302, 4561, 9146, 5619, 8720, 4823, 5619, 7931, 3159, 3287, 9146, 7302, 2048, 4561, 2048, 3287, 8720, 7931, 914]
 
-# Définir la région (bounding box) où tu veux rechercher du texte
-# Les coordonnées sont en points (1 point = 1/72 inch)
-x0, y0, x1, y1 = 100, 100, 400, 500  # Coordonnées de la région (à ajuster selon le PDF)
+max_bar_length = 12000
 
-# Ouvre le fichier PDF
-with pdfplumber.open(pdf_path) as pdf:
-    for page_num, page in enumerate(pdf.pages):
-        # Extraire le texte dans la région définie par la bounding box
-        texte_dans_region = page.within_bbox((x0, y0, x1, y1)).extract_text()
-        
-        print(f"Page {page_num + 1} - Texte dans la région (x0: {x0}, y0: {y0}, x1: {x1}, y1: {y1}):")
-        print(texte_dans_region)
-        
-        # Recherche d'une phrase ou d'un ensemble de mots spécifique dans cette région
-        phrase_recherchee = "Votre phrase à rechercher"
-        if phrase_recherchee in texte_dans_region:
-            print(f"Phrase trouvée à la page {page_num + 1} dans la région définie.")
-
-import pdfplumber
-
-# Chemin vers le fichier PDF
-pdf_path = "path/to/your/pdf-file.pdf"
-
-# Dimensions des formats A3 et A1 en points
-A3_DIMENSIONS = (841.89, 1190.55)
-A1_DIMENSIONS = (1683.78, 2383.94)
-
-# Fonction pour comparer les tailles de page
-def check_page_format(width, height):
-    if (round(width, 2), round(height, 2)) == A3_DIMENSIONS:
-        return "A3"
-    elif (round(width, 2), round(height, 2)) == A1_DIMENSIONS:
-        return "A1"
-    else:
-        return "Unknown format"
-
-# Ouvre le fichier PDF
-with pdfplumber.open(pdf_path) as pdf:
-    for page_num, page in enumerate(pdf.pages):
-        # Récupère la taille de la page
-        page_width = page.width
-        page_height = page.height
-        page_format = check_page_format(page_width, page_height)
-        
-        print(f"Page {page_num + 1} - Format: {page_format} (Size: {page_width} x {page_height} points)")
-
-Sub LancerScriptPythonSimple()
-
-    ' Le chemin de l'exécutable Python
-    Dim pythonExec As String
-    pythonExec = "python" ' Assumes Python is in the PATH, otherwise give full path
-    
-    ' Le chemin vers ton script Python
-    Dim scriptPath As String
-    scriptPath = "C:\chemin\vers\mon_script.py"
-    
-    ' Lancer le script Python avec Shell
-    Shell pythonExec & " " & scriptPath, vbNormalFocus
-
-End Sub
-Sub ImportJSONtoExcel()
-    Dim jsonFile As String
-    Dim jsonData As Object
-    Dim dict As Object
-    Dim key As Variant
-    Dim ws As Worksheet
-    Dim i As Long, j As Long
-
-    ' Define the worksheet
-    Set ws = ThisWorkbook.Sheets("Sheet1")
-
-    ' Path to your JSON file
-    jsonFile = "C:\path\to\yourfile.json"
-
-    ' Read the JSON file content
-    jsonFile = ReadTextFile(jsonFile)
-
-    ' Parse the JSON
-    Set jsonData = JsonConverter.ParseJson(jsonFile)
-
-    ' Iterate through the keys of the JSON (assuming it's a dictionary)
-    i = 1 ' Start at row 1
-    For Each key In jsonData.Keys
-        ' Write the key in column A
-        ws.Cells(i, 1).Value = key
-        
-        ' Iterate through values (assuming they're arrays/lists)
-        j = 2 ' Start at column 2
-        For Each item In jsonData(key)
-            ws.Cells(i, j).Value = item
-            j = j + 1
-        Next item
-        
-        ' Move to the next row
-        i = i + 1
-    Next key
-
-End Sub
-
-Function ReadTextFile(filePath As String) As String
-    Dim fileNumber As Integer
-    Dim fileContent As String
-    fileNumber = FreeFile
-    Open filePath For Input As fileNumber
-    fileContent = Input$(LOF(fileNumber), fileNumber)
-    Close fileNumber
-    ReadTextFile = fileContent
-End Function
-Sub TestFileAccess()
-    Dim jsonFile As String
-    jsonFile = "C:\path\to\yourfile.json"
-    MsgBox Dir(jsonFile) ' Check if file exists
-End Sub
-Sub OpenJSONFileWithoutPrompt()
-    Dim filePath As String
-    Dim fileName As String
-    Dim fullPath As String
-    Dim fileNumber As Integer
-    Dim jsonData As String
-
-    ' Set the name of the JSON file
-    fileName = "temp.json"
-    
-    ' Construct the full path to the JSON file
-    fullPath = ThisWorkbook.Path & "\" & fileName
-    
-    ' Check if the file exists
-    If Dir(fullPath) <> "" Then
-        ' Open the JSON file for reading
-        fileNumber = FreeFile
-        Open fullPath For Input As #fileNumber
-        
-        ' Read the contents of the JSON file
-        jsonData = Input$(LOF(fileNumber), fileNumber)
-        
-        ' Close the file
-        Close #fileNumber
-        
-        ' Display the contents in a message box (optional)
-        MsgBox "Contents of " & fileName & ":" & vbCrLf & jsonData
-    Else
-        MsgBox "The file " & fileName & " does not exist in the same folder as this workbook."
-    End If
-End Sub
+used_bars = optimize_cutting_with_groups(lengths_to_cut, max_bar_length)
+for i, bar in enumerate(used_bars, 1):
+    print(f"Bar {i}: {bar} (Total: {sum(bar)} mm)")
